@@ -12,7 +12,8 @@ enum ESortType
 	PING
 	FAVORITE,
 	PASSWORDED,
-	QUEUE
+	QUEUE,
+	MAP
 };
 
 enum ESortOrder
@@ -20,6 +21,117 @@ enum ESortOrder
 	ASCENDING,		
 	DESCENDING,
 };
+
+class ServerBrowserHelperFunctions
+{
+	static ref ServerBrowserHelperFunctions s_ServerBrowserHelperFunctions;
+	protected static const string CHERNARUS_MAP_IMAGE = ""; // placeholder image path
+	protected static const string LIVONIA_MAP_IMAGE = ""; // placeholder image path
+	protected static const string SAKHAL_MAP_IMAGE = ""; // placeholder image path
+	protected static const string LOWERCASE_ALPHABET = "abcdefghijklmnopqrstuvwxyz"; // used for temporary hotfix
+	static ref map<string, string> INTERNAL_MAP_NAMES = new map<string, string>;
+
+	void ServerBrowserHelperFunctions()
+	{
+		INTERNAL_MAP_NAMES.Insert("chernarusplus", "Chernarus");
+		INTERNAL_MAP_NAMES.Insert("enoch", "Livonia");
+		INTERNAL_MAP_NAMES.Insert("sakhal", "Sakhal");
+	}
+	
+	// Use this function to add maps to the server browser map filter options
+	static void AddMapInfo(string mapName, string mapDisplayName)
+	{
+		string mdn;
+		if (!INTERNAL_MAP_NAMES.Find(mapName, mdn))
+			INTERNAL_MAP_NAMES.Insert(mapName, mapDisplayName);
+	}
+
+	// Returns internal map name (mission world name) depending on given map display name if it can be fetched from CfgWorlds config.
+	static string GetInternalMapName(string mapName)
+	{
+		string internalMapName;	
+		foreach (string mn, string mdp: INTERNAL_MAP_NAMES)	
+		{
+			if (mdp == mapName)
+			{
+				internalMapName = mn;
+				break;
+			}
+		}
+		
+		return internalMapName;
+	}
+	
+	// Returns map display name depending on given internal map name (mission world name).
+	static string GetMapDisplayName(string mapName)
+	{
+		string displayMapName;
+		string internalMapName = mapName;
+		internalMapName.ToLower();
+
+		foreach (string mn, string mdp: INTERNAL_MAP_NAMES)	
+		{
+			if (mn == internalMapName)
+			{
+				displayMapName = mdp;
+				break;
+			}
+		}
+		
+		if (displayMapName == "")
+		{
+			displayMapName = mapName;
+			string fc = displayMapName[0];
+			if (fc != "")
+			{
+				// temporary fix for VME until fixed internaly
+				if (LOWERCASE_ALPHABET.IndexOf(fc) > -1)
+				{
+					fc.ToUpper();
+				}
+
+				displayMapName[0] = fc;
+			}
+		}
+
+		return displayMapName;
+	}
+	
+	// Returns map image texture path depending on given internal map name (mission world name).
+	static string GetServerMapImagePath(string mapName)
+	{
+		string image;
+		mapName.ToLower();
+		switch (mapName)
+		{
+			case "enoch":
+			{
+				image = LIVONIA_MAP_IMAGE;
+				break;
+			}
+			case "chernarusplus":
+			{
+				image = CHERNARUS_MAP_IMAGE;
+				break;
+			}
+			case "sakhal":
+			{
+				image = SAKHAL_MAP_IMAGE;
+				break;
+			}
+		}
+		
+		return image;
+	}
+	
+	static ServerBrowserHelperFunctions GetInstance()
+	{
+		if (!s_ServerBrowserHelperFunctions)
+			s_ServerBrowserHelperFunctions = new ServerBrowserHelperFunctions;
+		
+		return s_ServerBrowserHelperFunctions;
+	}
+}
 
 class GetServerModListResult
 {
@@ -38,8 +150,8 @@ class GetServersResultRow
 	int		m_HostPort; 			// PC is works
 	bool	m_Invisible;
 	bool	m_Official;
-	string	m_MapNameToRun; 		// PC not work always 0
-	bool	m_Modded; 				// PC not work always 0
+	string	m_MapNameToRun; 		// map that server is running: "enoch" for Livonia, "chernarusplus" for Chernarus, "sakhal" for Sakhal
+	bool	m_Modded; 				// specifies whether a PC server uses mods
 	int		m_ModeId; 				// identifies if third person is allowed on a CONSOLE server. On PC always 0
 	bool	m_AntiCheat;
 	int		m_RegionId; 			// PC not work always 0
@@ -114,6 +226,13 @@ class GetServersResultRow
 			{
 				return m_Name;
 			}
+			
+			case ESortType.MAP:
+			{
+				// m_MapNameToRun should never be a empty string but just in case we check before getting the map display name
+				if (m_MapNameToRun != "")
+					return ServerBrowserHelperFunctions.GetMapDisplayName(m_MapNameToRun);
+			}
 		}
 		
 		return "";
@@ -153,10 +272,10 @@ class GetServersResultRow
 	int CompareTo(GetServersResultRow other, ESortType sortType)
 	{	
 		// string comparison
-		if (sortType == ESortType.HOST)
+		if (sortType == ESortType.HOST || sortType == ESortType.MAP)
 		{
-			string val1 = this.GetValueStr(ESortType.HOST);
-			string val2 = other.GetValueStr(ESortType.HOST);
+			string val1 = this.GetValueStr(sortType);
+			string val2 = other.GetValueStr(sortType);
 			
 			if (val1 == val2)
 				return 0;

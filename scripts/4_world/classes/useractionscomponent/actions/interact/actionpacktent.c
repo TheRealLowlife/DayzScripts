@@ -44,6 +44,11 @@ class ActionPackTent : ActionContinuousBase
 		return true;
 	}
 	
+	override bool UseMainItem()
+	{
+		return false;
+	}
+	
 	override bool ActionConditionContinue( ActionData action_data )
 	{
 		Object targetParent = action_data.m_Target.GetParent();

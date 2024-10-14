@@ -153,6 +153,26 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 	 		}
 	 		else
 	 		{
+				PlayerBase player = PlayerBase.Cast(m_pPlayer);
+				if (player)	// handle locking of camera U/D angle movement when performing an action and not in freelook
+				{		
+					float pitch = pAngle + pAngleAdd; 
+					float downLimit, upLimit, leftLimit, rightLimit;
+					player.GetLookLimits(downLimit, upLimit, leftLimit, rightLimit);
+					
+					if (pitch < (upLimit + 1) && pitch > (downLimit - 1)) // stop smoothing once within sufficiently small difference
+					{
+						pMin = downLimit;
+						pMax = upLimit;
+					}
+					else // smooth camera to locked angle, avoiding snap from the angle we started the action to the limit
+					{
+						float vel[1] = m_fUDAngleVel;
+						pMin = Math.SmoothCD(pitch, downLimit, vel, 0.2, 1000, pDt);
+						pMax = Math.SmoothCD(pitch, upLimit, vel, 0.2, 1000, pDt);
+					}
+				}
+				
 				pAngleAdd = Math.SmoothCD(pAngleAdd, 0.0, m_fUDAngleVel, 0.14, 1000, pDt);
 			}
 	
@@ -161,7 +181,7 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 				pAngle += m_pInput.GetAimDelta(pDt)[1] * Math.RAD2DEG;
 	 		}
 		}
-		
+				
 		pAngle = Limit(pAngle, pMin, pMax);
 		pAngleAdd = Limit(pAngle + pAngleAdd, pMin, pMax) - pAngle;
 		return pAngle + pAngleAdd;

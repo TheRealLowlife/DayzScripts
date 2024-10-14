@@ -951,7 +951,7 @@ class Inventory: LayoutHolder
 			if (m_HandsArea.IsActive())
 			{
 				player = PlayerBase.Cast(GetGame().GetPlayer());
-				item_to_assign = player.GetItemInHands();
+				item_to_assign = m_HandsArea.GetFocusedItem();
 				m_HandsArea.AddItemToQuickbarRadial(item_to_assign);
 			}
 			else if (m_RightArea.IsActive())
@@ -993,7 +993,8 @@ class Inventory: LayoutHolder
 			}
 		}
 		
-		if (!m_HadInspected && GetUApi().GetInputByID(UAUIBack).LocalPress())
+		// controller close inventory using back action
+		if (!m_HadInspected && GetUApi().GetInputByID(UAUIBack).LocalPress() && GetGame().GetInput().GetCurrentInputDevice() == EInputDeviceType.CONTROLLER)
 		{
 			mission.HideInventory();
 		}
@@ -1150,7 +1151,7 @@ class Inventory: LayoutHolder
 			}
 		}
 		
-		UpdateSpecialtyMeter();
+		m_SpecializationPanel.Show(false);
 		
 		#ifdef PLATFORM_CONSOLE
 			ResetFocusedContainers();

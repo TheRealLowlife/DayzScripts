@@ -17,10 +17,6 @@ class ActionInteractLoopBaseCB : ActionInteractBaseCB
 		return DefaultCancelCondition(); 
 	}
 	
-	override void OnAnimationEvent(int pEventID)	
-	{
-	}
-	
 	override void CreateActionComponent()
 	{
 		m_ActionData.m_ActionComponent = new CAInteract;

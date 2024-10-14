@@ -15,6 +15,7 @@ class MissionGameplay extends MissionBase
 	ref HudDebug					m_HudDebug;
 	ref LogoutMenu					m_Logout;
 	ref DebugMonitor				m_DebugMonitor;
+	ref Watermark					m_Watermark;
 	
 	protected ref ScriptInvoker 		m_OnConnectivityChanged;
 	
@@ -161,6 +162,13 @@ class MissionGameplay extends MissionBase
 			PluginConfigDebugProfile.GetInstance().SetLogsEnabled(LogManager.IsLogsEnable());
 		}		
 		#endif
+		
+		// temporary hud watermark
+		#ifndef DIAG_DEVELOPER
+		#ifdef BUILD_EXPERIMENTAL
+		m_Watermark = new Watermark(m_HudRootWidget);
+		#endif
+		#endif
 	}
 	
 	UIManager GetUIManager()
@@ -178,7 +186,6 @@ class MissionGameplay extends MissionBase
 #endif
 
 		g_Game.SetMissionState(DayZGame.MISSION_STATE_GAME);
-		m_DynamicMusicPlayer.SetCategory(EDynamicMusicPlayerCategory.TIME, true);
 	}
 	
 	void InitInventory()
@@ -562,17 +569,7 @@ class MissionGameplay extends MissionBase
 		if (player)
 		{
 			int life_state = player.GetPlayerState();
-			
-			// life state changed
-			if (m_LifeState != life_state)
-			{
-				m_LifeState = life_state;
-				
-				if (m_LifeState != EPlayerStates.ALIVE && !player.IsUnconscious())
-				{
-					CloseAllMenus();
-				}
-			}
+			m_LifeState = life_state;
 		}
 		
 		if (menu && !menu.UseKeyboard() && menu.UseMouse())

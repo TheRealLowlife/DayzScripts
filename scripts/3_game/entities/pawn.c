@@ -192,6 +192,9 @@ class Pawn : EntityAI
 	
 	//! Returns true if the Pawn is being processed on a proxy
 	proto native bool IsProxy();
+
+	//! Force a correction to the owner as a server only event was called (called on authority only)
+	proto native void ForceCorrection();
 	
 	//! Returns the identity that is in possession of the Pawn
 	proto native PlayerIdentity GetOwnerIdentity();

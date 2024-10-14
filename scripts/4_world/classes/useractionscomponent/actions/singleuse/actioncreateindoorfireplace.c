@@ -61,7 +61,7 @@ class ActionCreateIndoorFireplace: ActionSingleUseBase
 	}
 	
 	override void OnExecuteServer( ActionData action_data )
-	{	
+	{
 		Object obj = GetGame().CreateObjectEx( "FireplaceIndoor", action_data.m_Player.GetLastFirePoint(), ECE_PLACE_ON_SURFACE );
 	
 		int m_FirePointIndex = action_data.m_Player.GetLastFirePointIndex();
@@ -83,7 +83,23 @@ class ActionCreateIndoorFireplace: ActionSingleUseBase
 			fp_indoor.Synchronize();
 			
 			//move item to target fireplace
-			action_data.m_Player.ServerTakeEntityToTargetAttachment(fp_indoor, action_data.m_MainItem);
+			if (!GetGame().IsMultiplayer())
+			{
+				ClearInventoryReservationEx(action_data);
+				action_data.m_Player.LocalTakeEntityToTargetAttachment(fp_indoor, action_data.m_MainItem);
+			}
+			else
+				action_data.m_Player.ServerTakeEntityToTargetAttachment(fp_indoor, action_data.m_MainItem);
 		}
+	}
+	
+	override void OnExecuteClient( ActionData action_data )
+	{
+		ClearInventoryReservationEx(action_data);
+	}
+	
+	override bool IsLockTargetOnUse()
+	{
+		return false;
 	}
 }

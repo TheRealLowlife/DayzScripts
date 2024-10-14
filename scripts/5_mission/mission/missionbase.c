@@ -2,7 +2,6 @@ class MissionBase extends MissionBaseWorld
 {
 	PluginDeveloper 		m_ModuleDeveloper;
 	PluginKeyBinding		m_ModuleKeyBinding
-	PluginAdditionalInfo	m_ModuleServerInfo;
 	
 	ref WidgetEventHandler 	m_WidgetEventHandler;
 	ref WorldData			m_WorldData;
@@ -24,12 +23,9 @@ class MissionBase extends MissionBaseWorld
 		m_WidgetEventHandler = new WidgetEventHandler();
 
 		m_InventoryDropCallback = new EntityPlacementCallback();
-
-		//TODO clea up after Gamescom
-		m_ModuleServerInfo = PluginAdditionalInfo.Cast( GetPlugin(PluginAdditionalInfo) );
-		//
 		SoundSetMap.Init();
 		
+		GetDayZGame().GetYieldDataInitInvoker().Insert(InitWorldYieldDataDefaults);
 		InitialiseWorldData();
 		
 		#ifndef SERVER
@@ -52,6 +48,8 @@ class MissionBase extends MissionBaseWorld
 
 	void ~MissionBase()
 	{
+		GetDayZGame().GetYieldDataInitInvoker().Remove(InitWorldYieldDataDefaults);
+		
 		PluginManagerDelete();
 		
 		if ( GetGame().IsClient() )
@@ -75,6 +73,13 @@ class MissionBase extends MissionBaseWorld
 		#endif
 	}
 	
+	override void OnEvent(EventType eventTypeId, Param params)
+	{
+		super.OnEvent(eventTypeId, params);
+		
+		m_DynamicMusicPlayer.OnGameEvent(eventTypeId, params);
+	}
+	
 	void InitialiseWorldData()
 	{
 		string worldName = "empty";
@@ -92,6 +97,11 @@ class MissionBase extends MissionBaseWorld
 				m_WorldData = new EnochData();
 				m_DynamicMusicPlayerRegistry = new DynamicMusicPlayerRegistryEnoch();
 				break;
+
+			case "sakhal":
+				m_WorldData = new SakhalData();
+				m_DynamicMusicPlayerRegistry = new DynamicMusicPlayerRegistrySakhal();
+				break;
 			
 			#ifdef PLATFORM_CONSOLE
 			case "mainmenuscenexbox":
@@ -104,6 +114,35 @@ class MissionBase extends MissionBaseWorld
 				m_WorldData = new ChernarusPlusData();
 				m_DynamicMusicPlayerRegistry = new DynamicMusicPlayerRegistry();
 				break;
+		}
+	}
+	
+	//! Used to initialize defaults to WorldData base class from 4_World module. For proper init of your custom world, use 'InitYieldBank' method in the inherited world data
+	void InitWorldYieldDataDefaults(CatchYieldBank bank)
+	{
+		//catch yield data beyond 3_Game level, defaults used for ChernarusPlusData
+		if (bank)
+		{
+			//fishies
+			bank.RegisterYieldItem(new YieldItemCarp(15));
+			bank.RegisterYieldItem(new YieldItemMackerel(15));
+			bank.RegisterYieldItem(new YieldItemSardines(15));
+			bank.RegisterYieldItem(new YieldItemBitterlings(15));
+			
+			//fishy junk
+			bank.RegisterYieldItem(new YieldItemJunk(1,"Wellies_Brown"));
+			bank.RegisterYieldItem(new YieldItemJunk(1,"Wellies_Grey"));
+			bank.RegisterYieldItem(new YieldItemJunk(1,"Wellies_Green"));
+			bank.RegisterYieldItem(new YieldItemJunk(1,"Wellies_Black"));
+			bank.RegisterYieldItem(new YieldItemJunkEmpty(1,"Pot"));
+			
+			//non-fishies
+			bank.RegisterYieldItem(new YieldItemDeadRabbit(4));
+			bank.RegisterYieldItem(new YieldItemDeadRooster(1));
+			bank.RegisterYieldItem(new YieldItemDeadChicken_White(1));
+			bank.RegisterYieldItem(new YieldItemDeadChicken_Spotted(1));
+			bank.RegisterYieldItem(new YieldItemDeadChicken_Brown(1));
+			bank.RegisterYieldItem(new YieldItemDeadFox(2));
 		}
 	}
 
@@ -425,7 +464,7 @@ class MissionBase extends MissionBaseWorld
 		m_DummyPlayers.Insert(PlayerBase.Cast( player ));
 	}
 
-#ifdef DIAG_DEVELOPER
+	#ifdef DIAG_DEVELOPER
 	void UpdateInputDeviceDiag()
 	{
 		DisplayInputDebug(DiagMenu.GetBool(DiagMenuIDs.MISC_INPUT_DEVICE_DISCONNECT_DBG));
@@ -446,7 +485,10 @@ class MissionBase extends MissionBaseWorld
 		DbgUI.End();
 		DbgUI.EndCleanupScope();
 	}
-#endif
+	#endif
+	
+	//! DEPRECATED
+	PluginAdditionalInfo	m_ModuleServerInfo;
 }
 
 class MissionDummy extends MissionBase

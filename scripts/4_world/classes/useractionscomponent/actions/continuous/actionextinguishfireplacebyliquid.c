@@ -36,9 +36,12 @@ class ActionExtinguishFireplaceByLiquid : ActionContinuousBase
 		{
 			FireplaceBase fireplace = FireplaceBase.Cast(targetObject);
 			
-			if (fireplace.CanExtinguishFire() && !item.IsDamageDestroyed() && (item.GetLiquidType() & (GROUP_LIQUID_BLOOD | LIQUID_WATER | LIQUID_RIVERWATER | LIQUID_BEER)))
+			if (fireplace.CanExtinguishFire() && !item.IsDamageDestroyed() && (item.GetLiquidType() & (GROUP_LIQUID_BLOOD | LIQUID_WATER | LIQUID_BEER)))
 			{
-				return true;
+				if (!item.GetIsFrozen())
+				{
+					return true;
+				}
 			}
 		}
 		
@@ -55,6 +58,8 @@ class ActionExtinguishFireplaceByLiquid : ActionContinuousBase
 	
 	override void OnEndServer(ActionData action_data)
 	{
+		super.OnEndServer(action_data);
+		
 		FireplaceBase fireplace = FireplaceBase.Cast(action_data.m_Target.GetObject());		
 		fireplace.RefreshFireState();
 	}

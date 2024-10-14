@@ -4,22 +4,6 @@ class ActionInteractBaseCB : ActionBaseCB
 	{
 		m_ActionData.m_ActionComponent = new CAInteract;
 	}
-
-	override void OnAnimationEvent(int pEventID)	
-	{	
-#ifdef ENABLE_LOGGING
-		if ( LogManager.IsActionLogEnable() )
-		{
-			if (m_ActionData)
-				Debug.ActionLog("n/a", m_ActionData.m_Action.ToString() , "n/a", "OnAnimationEvent", m_ActionData.m_Player.ToString() );
-		}
-#endif
-		if ( !m_Interrupted && pEventID == UA_ANIM_EVENT && m_ActionData && m_ActionData.m_Action ) 
-		{
-			AnimatedActionBase action = AnimatedActionBase.Cast(m_ActionData.m_Action);
-			action.OnAnimationEvent(m_ActionData);
-		}	
-	}
 	
 	override void InitActionComponent()
 	{

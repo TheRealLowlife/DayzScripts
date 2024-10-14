@@ -122,7 +122,7 @@ class DayZPlayerImplementMeleeCombat
 
 		m_NonAlignableObjects = new array<typename>;
 		m_NonAlignableObjects.Insert(Building);
-		m_NonAlignableObjects.Insert(Car);
+		m_NonAlignableObjects.Insert(Transport);
 		m_NonAlignableObjects.Insert(CarWheel);
 		m_NonAlignableObjects.Insert(CarDoor);
 		m_NonAlignableObjects.Insert(TentBase);

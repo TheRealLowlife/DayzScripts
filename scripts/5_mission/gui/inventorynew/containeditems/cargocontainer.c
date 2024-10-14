@@ -27,6 +27,8 @@ class CargoContainer extends Container
 	protected ref SizeToChild										m_Resizer2;
 	protected ref Timer												m_ResizeTimer;
 	
+	protected int													m_AttachmentSlotID = -1;
+	
 	void CargoContainer( LayoutHolder parent, bool is_attachment = false )
 	{
 		m_IsAttachment			= is_attachment;
@@ -735,7 +737,21 @@ class CargoContainer extends Container
 		{
 			GetFocusedIcon().SetActive( false );
 		}
-		m_FocusedItemPosition = ( ( m_Rows.Count() - 1 ) * ROWS_NUMBER_XBOX );
+		
+		int focusedIconCount = m_Icons.Count();
+		int columCount = m_Icons.Count() / ROWS_NUMBER_XBOX;
+		if (focusedIconCount > ROWS_NUMBER_XBOX)
+		{
+			int iconMax = columCount * ROWS_NUMBER_XBOX;
+			int diff = focusedIconCount - iconMax;
+			if (diff == 0)
+				diff = ROWS_NUMBER_XBOX;
+			m_FocusedItemPosition = focusedIconCount - diff;
+		}
+		else
+		{
+			m_FocusedItemPosition = 0;
+		}
 		UpdateSelection();
 	}
 	
@@ -963,5 +979,20 @@ class CargoContainer extends Container
 		{
 			UpdateHeaderText();
 		}
+	}
+	
+	void SetAttachmentSlotID(int slotID)
+	{
+		m_AttachmentSlotID = slotID;
+	}
+	
+	int GetAttachmentSlotID()
+	{
+		return m_AttachmentSlotID;
+	}
+	
+	int GetIconsCount()
+	{
+		return m_Icons.Count();
 	}
 }

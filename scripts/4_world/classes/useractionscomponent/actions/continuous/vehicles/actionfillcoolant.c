@@ -37,20 +37,25 @@ class ActionFillCoolant: ActionContinuousBase
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		if( !target )
+		if (!target)
 			return false;
 
-		if( item.GetQuantity() <= 0 )
+		if (item.GetQuantity() <= 0)
 			return false;
 
-		if( item.GetLiquidType() != LIQUID_WATER && item.GetLiquidType() != LIQUID_RIVERWATER )
-			return false;
-
-		Car car = Car.Cast( target.GetParent() );
-		if( !car )
+		if (item.GetLiquidType() != LIQUID_WATER)
 			return false;
 		
-		if( car.GetFluidFraction( CarFluid.COOLANT ) >= 0.95 )
+		if (item.GetIsFrozen())
+		{
+			return false;
+		}
+
+		Car car = Car.Cast( target.GetParent() );
+		if (!car)
+			return false;
+		
+		if (car.GetFluidFraction( CarFluid.COOLANT ) >= 0.95)
 			return false;
 
 		array<string> selections = new array<string>;
@@ -58,23 +63,23 @@ class ActionFillCoolant: ActionContinuousBase
 
 		CarScript carS = CarScript.Cast(car);
 		
-		if( carS )
+		if (carS)
 		{
 			EntityAI radiator = null;
 			EntityAI carAI;
 			
-			if ( CastTo(carAI, car) )
+			if (CastTo(carAI, car))
 			{
 				radiator = carAI.GetInventory().FindAttachment(InventorySlots.GetSlotIdFromString("CarRadiator"));
-				if ( radiator && !radiator.IsRuined() )
+				if (radiator && !radiator.IsRuined())
 				{
 					for (int s = 0; s < selections.Count(); s++)
 					{
-						if ( selections[s] == carS.GetActionCompNameCoolant() )
+						if (selections[s] == carS.GetActionCompNameCoolant())
 						{
 							float dist = vector.Distance( carS.GetCoolantPtcPosWS(), player.GetPosition() );
 
-							if ( dist < carS.GetActionDistanceCoolant() )
+							if (dist < carS.GetActionDistanceCoolant())
 								return true;
 						}
 					}

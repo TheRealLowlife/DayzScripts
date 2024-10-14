@@ -15,6 +15,14 @@ class ActionBaseCB : HumanCommandActionCallback
 		return m_ActionData.m_PossibleStanceMask;
 	}
 	
+	override void OnAnimationEvent(int pEventID)	
+	{
+		if ( m_ActionData )
+		{
+			m_ActionData.m_DelayedAnimationEventID = pEventID;
+		}
+	}
+
 	//Command events
 	override void OnFinish(bool pCanceled)	
 	{
@@ -175,29 +183,50 @@ class AnimatedActionBase : ActionBase
 	//TODO MW - add comment 
 	void OnAnimationEvent( ActionData action_data )
 	{
-		if (action_data && !action_data.m_WasExecuted)
+		if (action_data.m_DelayedAnimationEventID == UA_ANIM_EVENT)
 		{
-			ActionBase action = action_data.m_Action;
-			
-			if (action && ( !action.UseMainItem() || action_data.m_MainItem ) && ( !action.HasTarget() || action_data.m_Target ))
+			if (action_data && !action_data.m_WasExecuted)
 			{
-				if ( LogManager.IsActionLogEnable() )
-				{
-					Debug.ActionLog("Time stamp: " + action_data.m_Player.GetSimulationTimeStamp(), this.ToString() , "n/a", "OnExecute", action_data.m_Player.ToString() );
+				ActionBase action = action_data.m_Action;
+				
+				if (action && ( !action.UseMainItem() || action_data.m_MainItem ) && ( !action.HasTarget() || action_data.m_Target ))
+				{	
+					OnExecute(action_data);
+				
+					if (GetGame().IsServer())
+						OnExecuteServer(action_data);
+					else
+						OnExecuteClient(action_data);
+	
+					action_data.m_WasExecuted = true;
+					action_data.m_WasActionStarted  = true;
 				}
-				OnExecute(action_data);
-			
-				if (GetGame().IsServer())
-					OnExecuteServer(action_data);
-				else
-					OnExecuteClient(action_data);
-
-				action_data.m_WasExecuted = true;
-				action_data.m_WasActionStarted  = true;
 			}
 		}
 	}
 	
+	void CheckAnimationEvent(ActionData action_data)
+	{
+		if (action_data.m_DelayedAnimationEventID != UA_NONE)
+		{
+			#ifdef ENABLE_LOGGING
+			if ( LogManager.IsActionLogEnable() )
+			{
+				if (action_data)
+					Debug.ActionLog("STS: " + action_data.m_Player.GetSimulationTimeStamp() + " Event: " + action_data.m_DelayedAnimationEventID, action_data.m_Action.ToString() , "n/a", "OnAnimationEvent", action_data.m_Player.ToString() );
+			}
+			#endif
+			OnAnimationEvent(action_data);
+			action_data.m_DelayedAnimationEventID = UA_NONE;
+		}
+	}
+	
+	override void OnUpdate(ActionData action_data)
+	{
+		super.OnUpdate(action_data);
+		CheckAnimationEvent(action_data);
+	}
+		
 	override bool ActionConditionContinue( ActionData action_data ) //condition for action
 	{
 		return ActionCondition(action_data.m_Player,action_data.m_Target,action_data.m_MainItem);
@@ -208,8 +237,25 @@ class AnimatedActionBase : ActionBase
 		return true;
 	}
 	
-	//TODO MW - add comment 
-	protected int GetActionCommand( PlayerBase player )
+	override protected int GetStanceMaskEx(PlayerBase player, ActionTarget target, ItemBase item)
+	{
+		int stanceOverride = GetStanceMaskOverride(item);
+		if (stanceOverride != -1)
+			return stanceOverride;
+		
+		return GetStanceMask(player));
+	}
+	
+	protected int GetActionCommandEx(ActionData actionData)
+	{
+		int commandOverride = GetCommandOverride(actionData);
+		if (commandOverride != -1)
+			return commandOverride;
+			
+		return GetActionCommand(actionData.m_Player);
+	}
+	
+	protected int GetActionCommand(PlayerBase player)
 	{
 		if ( HasProneException() )
 		{
@@ -219,6 +265,43 @@ class AnimatedActionBase : ActionBase
 				return m_CommandUIDProne;
 		}
 		return m_CommandUID;
+	}
+	
+	protected int GetCommandOverride(ActionData actionData)
+	{
+		if (!actionData.m_MainItem)
+			return -1;
+		
+		TActionAnimOverrideMap overrideMap = ItemBase.m_ItemActionOverrides.Get(this.Type());
+		if (!overrideMap)
+			return -1;
+		
+		ActionOverrideData overrideData = overrideMap.Get(actionData.m_MainItem.Type());
+		if (overrideData)
+		{
+			if ( HasProneException() && actionData.m_Player.IsPlayerInStance(DayZPlayerConstants.STANCEMASK_PRONE) )
+				return overrideData.m_CommandUIDProne;
+			else 
+				return overrideData.m_CommandUID;
+		}
+				
+		return -1;
+	}
+	
+	protected int GetStanceMaskOverride(ItemBase item)
+	{
+		if (item)
+		{
+			TActionAnimOverrideMap overrideMap = ItemBase.m_ItemActionOverrides.Get(this.Type());
+			if (overrideMap)
+			{
+				ActionOverrideData overrideData = overrideMap.Get(item.Type());
+				if (overrideData && overrideData.m_StanceMask != -1)
+					return overrideData.m_StanceMask;
+			}
+		}
+		
+		return -1;
 	}
 	
 	protected typename GetCallbackClassTypename()
@@ -237,14 +320,14 @@ class AnimatedActionBase : ActionBase
 	{
 		//Print("ActionBase.c | CreateAndSetupActionCallback | DBG ACTION CALLBACK CREATION CALLED");
 		ActionBaseCB callback;
-		if (  IsFullBody(action_data.m_Player) )
+		if (  IsFullBodyEx(action_data.m_Player, action_data.m_Target, action_data.m_MainItem) )
 		{
-			Class.CastTo(callback, action_data.m_Player.StartCommand_Action(GetActionCommand(action_data.m_Player),GetCallbackClassTypename(),GetStanceMask(action_data.m_Player)));	
+			Class.CastTo(callback, action_data.m_Player.StartCommand_Action(GetActionCommandEx(action_data),GetCallbackClassTypename(),GetStanceMaskEx(action_data.m_Player, action_data.m_Target, action_data.m_MainItem)));	
 			//Print("ActionBase.c | CreateAndSetupActionCallback |  DBG command starter");		
 		}
 		else
 		{
-			Class.CastTo(callback, action_data.m_Player.AddCommandModifier_Action(GetActionCommand(action_data.m_Player),GetCallbackClassTypename()));
+			Class.CastTo(callback, action_data.m_Player.AddCommandModifier_Action(GetActionCommandEx(action_data),GetCallbackClassTypename()));
 			//Print("ActionBase.c | CreateAndSetupActionCallback |  DBG command modif starter: "+callback.ToString()+"   id:"+GetActionCommand().ToString());
 			
 		}
@@ -396,6 +479,20 @@ class AnimatedActionBase : ActionBase
 			}
 			action_data.m_Callback.Interrupt();
 		}
+	}
+	
+	override void OnStartServer(ActionData action_data)
+	{
+		super.OnStartServer(action_data);
+		
+		if (!IsInstant())
+			action_data.m_Player.SetPerformedActionID(GetID());
+	}
+	
+	override void OnEndServer(ActionData action_data)
+	{
+		action_data.m_Player.SetPerformedActionID(-1);
+		super.OnEndServer(action_data);
 	}
 	
 	override float GetProgress( ActionData action_data )

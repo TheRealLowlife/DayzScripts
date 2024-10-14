@@ -196,7 +196,6 @@ class PlayerSpawnHandler
 		
 		foreach (PlayerSpawnPresetComplexChildrenType cct : data.complexChildrenTypes)
 		{
-			//todo: slotID option over nyah?
 			if (cct.itemType == string.Empty)
 			{
 				Debug.Log("Empty item type found in 'complexChildrenTypes' of parent : " + parent,"n/a","n/a","SpawnSimpleChildrenItems");
@@ -315,7 +314,6 @@ class PlayerSpawnHandler
 		if (item.IsMagazine())
 		{
 			Magazine mag = Magazine.Cast(item);
-			//todo: magazine bullet customization?
 			/*if (attributes.magazineAmmoOrdered && attributes.magazineAmmoOrdered.Count() > 0)
 			{
 				mag.ServerSetAmmoCount(0);

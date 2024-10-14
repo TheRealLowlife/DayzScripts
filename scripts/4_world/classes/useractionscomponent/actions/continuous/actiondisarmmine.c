@@ -50,7 +50,7 @@ class ActionDisarmMine: ActionContinuousBase
 		}
 	}
 	
-	override void OnAnimationEvent(ActionData action_data)
+	override void OnExecute(ActionData action_data)
 	{
 		if (!GetGame().IsMultiplayer() || GetGame().IsServer())
 		{

@@ -40,6 +40,11 @@ class ActionWaterGardenSlot: ActionContinuousBase
 			return false; //  Forbid watering of plants with gasoline and other fluids
 		}
 		
+		if (item.GetIsFrozen())
+		{
+			return false;
+		}
+		
 		if ( targetObject.IsInherited(GardenBase) )
 		{
 			GardenBase garden_base = GardenBase.Cast( targetObject );
@@ -56,8 +61,8 @@ class ActionWaterGardenSlot: ActionContinuousBase
 				if (slot)
 					break;
 			}
-		
-			if ( slot && !slot.GetPlant() && slot.CanBeWatered() && slot.GetWateredState() == 0 )
+					
+			if ( slot && !slot.GetPlant() && slot.GetWateredState() == 0 )
 			{
 				return true;
 			}

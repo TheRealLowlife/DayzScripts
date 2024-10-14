@@ -27,8 +27,19 @@ class Colors
 	const int COLOR_SOAKING_WET 	= 0x003030FF;
 	const int COLOR_WET 			= 0x006060FF;
 	const int COLOR_DAMP 			= 0x009090FF;
+	
+	const int TEMPERATURE_HOT_LVL_FOUR			= 0x009D1A18;
+	const int TEMPERATURE_HOT_LVL_THREE  		= 0x00D92C28;
+	const int TEMPERATURE_HOT_LVL_TWO 			= 0x00DC3E40;
+	const int TEMPERATURE_HOT_LVL_ONE  			= 0x00EE8227;
+	const int TEMPERATURE_NEUTAL				= 0x00999999;
+	const int TEMPERATURE_COLD_LVL_ONE 			= 0x0098D9E9;
+	const int TEMPERATURE_COLD_LVL_TWO 			= 0x007095D3;
+	const int TEMPERATURE_COLD_LVL_THREE  		= 0x004851BD;
+	const int TEMPERATURE_COLD_LVL_FOUR 		= 0x00351BEA;
 
 	const int COLOR_LIQUID 			= 0x0000EEFF;
+	const int COLOR_FROZEN			= 0x006666FF;
 	
 	const int COLOR_RAW				= 0x00BF4242;
 	const int COLOR_BAKED			= 0x00A56D28;
@@ -49,6 +60,10 @@ class Colors
 	const int COLOR_LIVONIA_DARK_GREEN 		= 0xff1c2118;
 	const int COLOR_LIVONIA_BLACK_GREEN 	= 0xff0b100a;
 	const int COLOR_LIVONIA_OLIVE 			= 0xff8e8045;
+	
+	const int COLOR_FROSTLINE_LIGHT_BLUE = 0xff90b2bf;
+	const int COLOR_FROSTLINE_MOUNTAIN_BLUE = 0xff365d6e;
+	const int COLOR_FROSTLINE_DARK_BLUE = 0xff0d1c21;
 }
 
 class FadeColors

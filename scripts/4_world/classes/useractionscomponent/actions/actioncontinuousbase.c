@@ -31,44 +31,11 @@ class ActionContinuousBaseCB : ActionBaseCB
 		return DefaultCancelCondition();
 	}
 	
-	
-	override void OnAnimationEvent(int pEventID)	
+	void SetInLoop(bool value)
 	{
-		if ( m_ActionData && m_ActionData.m_Action )
-		{
-			AnimatedActionBase action = AnimatedActionBase.Cast(m_ActionData.m_Action);
-#ifdef DEVELOPER
-			//Print("ActionInteractBase.c | OnAnimationEvent | OnAnimationEvent called");
-#endif
-			
-			if ( LogManager.IsActionLogEnable() )
-			{
-				Debug.ActionLog("Time stamp: " + m_ActionData.m_Player.GetSimulationTimeStamp() + " / " + pEventID, this.ToString() , "n/a", "OnAnimationEvent", m_ActionData.m_Player.ToString() );
-			}
-			
-			if ( !m_Interrupted && pEventID == UA_IN_START ) 
-			{
-				m_inLoop = true;
-			//ActionContinuousBase.Cast(action).OnStartLoop( m_ActionData );
-			}
-			else if ( !m_Interrupted && pEventID == UA_IN_END ) 
-			{
-			
-				m_inLoop = false;
-				//ActionContinuousBase.Cast(action).OnCompleteLoop( m_ActionData );
-			}
-			else if ( !m_Interrupted && pEventID == UA_ANIM_EVENT ) 
-			{
-				action.OnAnimationEvent( m_ActionData );
-				//action.OnCompleteLoop( m_ActionData );
-			}
-		}
-		else
-		{
-			//Debug.LogError("Call OnAnimationEvent ")
-		}
+		 m_inLoop = value;
 	}
-	
+		
 	override void InitActionComponent()
 	{
 		m_Interrupted = false;
@@ -88,8 +55,29 @@ class ActionContinuousBaseCB : ActionBaseCB
 		m_SoundObject = m_ActionData.m_Action.PlayActionSound(m_ActionData.m_Player);
 	}
 	
+	//TODO: consider this for general use
+	/*override void EndActionComponent()
+	{
+		ActionContinuousBase action = ActionContinuousBase.Cast(m_ActionData.m_Action);
+		
+		if (m_ActionData.m_State != UA_FINISHED)
+			m_Canceled = true;
+		
+		if (m_ActionData.m_State == UA_FINISHED || m_ActionData.m_State == UA_CANCEL)
+		{
+			if (action.UseAlternativeInterrupt(m_ActionData))
+				SetCommand(DayZPlayerConstants.CMD_ACTIONINT_FINISH);
+			else
+				SetCommand(DayZPlayerConstants.CMD_ACTIONINT_END);
+		}
+		else
+		{
+			SetCommand(DayZPlayerConstants.CMD_ACTIONINT_INTERRUPT);
+		}
+	}*/
+	
 	override void EndActionComponent()
-	{		
+	{
 		// TODO for second type animation SetCommand(DayZPlayerConstants.CMD_ACTIONINT_FINISH);
 		if ( m_ActionData.m_State == UA_FINISHED )
 		{
@@ -117,7 +105,7 @@ class ActionContinuousBaseCB : ActionBaseCB
 			return;
 		}
 		m_ActionData.m_State = UA_FINISHED;
-	}	
+	}
 	
 	void UserEndsAction()
 	{
@@ -125,7 +113,7 @@ class ActionContinuousBaseCB : ActionBaseCB
 		{
 			m_ActionData.m_State = m_ActionData.m_ActionComponent.Cancel(m_ActionData);
 		}
-		EndActionComponent();
+		//EndActionComponent(); //already handled in 'AnimatedActionBase::Do' on cancel
 	}
 };
 
@@ -160,6 +148,33 @@ class ActionContinuousBase : AnimatedActionBase
 	{
 		return false;
 	}
+	
+	bool UseAlternativeInterrupt(ActionData action_data)
+	{
+		return false;
+	}
+	
+	// lock default camera while performing the action
+	bool IsCameraLockOnPerform()
+	{
+		return true;
+	}
+	
+	// camera up/down angle when performing a fullbody action
+	// values beetwen 0 and -90 (looking at ground) / 0 and 90 (looking above)
+	Vector2 GetCameraUDAngle()
+	{
+		Vector2 udAngle = new Vector2(-70, 45);
+		return udAngle;
+	}
+	
+	// camera (heading) left/right angle when performing a fullbody action
+	// values beetwen 0 and -180 (left restriction) / 0 and 180 (right restriction)
+	Vector2 GetCameraLRAngle()
+	{
+		Vector2 lrAngle = new Vector2(-70, 70);
+		return lrAngle;
+	}
 
 	override typename GetInputType()
 	{
@@ -169,6 +184,25 @@ class ActionContinuousBase : AnimatedActionBase
 	override int GetActionCategory()
 	{
 		return AC_CONTINUOUS;
+	}
+	
+	override void OnAnimationEvent(ActionData action_data)	
+	{
+		super.OnAnimationEvent(action_data);
+		ActionContinuousBaseCB callback;
+		if (Class.CastTo(callback, action_data.m_Callback))
+		{
+			if (action_data.m_DelayedAnimationEventID == UA_IN_START) 
+			{
+				OnStartAnimationLoop(action_data);
+				callback.SetInLoop(true);
+			}
+			else if (action_data.m_DelayedAnimationEventID == UA_IN_END) 
+			{
+				OnEndAnimationLoop(action_data);
+				callback.SetInLoop(false);
+			}
+		}
 	}
 	
 	void OnStartAnimationLoop( ActionData action_data )

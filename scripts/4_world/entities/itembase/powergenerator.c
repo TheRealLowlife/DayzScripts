@@ -45,16 +45,17 @@ class PowerGeneratorBase extends ItemBase
 		
 		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
 		{
- 			m_UTSSettings 					= new UniversalTemperatureSourceSettings();
-			m_UTSSettings.m_ManualUpdate	= true;
-			m_UTSSettings.m_TemperatureMin	= 0;
-			m_UTSSettings.m_TemperatureMax	= 80;
-			m_UTSSettings.m_RangeFull		= 1;
-			m_UTSSettings.m_RangeMax		= 2.5;
-			m_UTSSettings.m_TemperatureCap	= 8;
+ 			m_UTSSettings 						= new UniversalTemperatureSourceSettings();
+			m_UTSSettings.m_ManualUpdate		= true;
+			m_UTSSettings.m_TemperatureMin		= 0;
+			m_UTSSettings.m_TemperatureMax		= 80;
+			m_UTSSettings.m_TemperatureItemCap 	= GameConstants.ITEM_TEMPERATURE_NEUTRAL_ZONE_MIDDLE;
+			m_UTSSettings.m_TemperatureCap		= 8;
+			m_UTSSettings.m_RangeFull			= 1;
+			m_UTSSettings.m_RangeMax			= 2.5;
 			
-			m_UTSLEngine					= new UniversalTemperatureSourceLambdaEngine();
-			m_UTSource						= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
+			m_UTSLEngine						= new UniversalTemperatureSourceLambdaEngine();
+			m_UTSource							= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
 		}		
 	}
 	
@@ -74,6 +75,16 @@ class PowerGeneratorBase extends ItemBase
 		return LIQUID_THROUGHPUT_GENERATOR;
 	}
 	
+	protected vector GetSmokeParticlePosition()
+	{
+		return "0.3 0.21 0.4";
+	}
+	
+	protected vector GetSmokeParticleOrientation()
+	{
+		return "270 0 0";
+	}
+	
 	// Play the loop sound
 	void StartLoopSound()
 	{
@@ -84,10 +95,8 @@ class PowerGeneratorBase extends ItemBase
 				PlaySoundSetLoop(m_EngineLoop, LOOP_SOUND, 0, 0);
 				
 				// Particle
-				vector local_pos = "0.3 0.21 0.4";
-				vector local_ori = "270 0 0";
 				m_Smoke = new EffGeneratorSmoke();
-				SEffectManager.PlayOnObject(m_Smoke, this, local_pos, local_ori);
+				SEffectManager.PlayOnObject(m_Smoke, this, GetSmokeParticlePosition(), GetSmokeParticleOrientation());
 			}
 		}
 	}
@@ -258,6 +267,10 @@ class PowerGeneratorBase extends ItemBase
 	// Adds energy to the generator
 	void SetFuel(float fuel_amount)
 	{
+		// clamp
+		if (GetFuel() == 0.0 && fuel_amount <= 0.0)
+			return;
+
 		if (m_FuelTankCapacity > 0)
 		{
 			m_FuelToEnergyRatio = GetCompEM().GetEnergyMax() / m_FuelTankCapacity;
@@ -277,10 +290,9 @@ class PowerGeneratorBase extends ItemBase
 	// Returns how much fuel was accepted
 	float AddFuel(float available_fuel)
 	{
-		if (available_fuel == 0)
-		{
-			return 0;
-		}
+		if (available_fuel == 0.0)
+			return 0.0;
+
 		GetCompEM().InteractBranch(this);
 		float needed_fuel = GetMaxFuel() - GetFuel();
 		
@@ -317,7 +329,7 @@ class PowerGeneratorBase extends ItemBase
 	// Returns fuel amount
 	float GetFuel()
 	{
-		return GetCompEM().GetEnergy() / m_FuelToEnergyRatio;
+		return Math.Clamp(GetCompEM().GetEnergy() / m_FuelToEnergyRatio, 0.0, GetMaxFuel());
 	}
 
 	// Returns max fuel amount
@@ -385,11 +397,51 @@ class PowerGeneratorBase extends ItemBase
 		
 		SetFuel(GetMaxFuel());
 	}
+	
+	override void GetDebugActions(out TSelectableActionInfoArrayEx outputList)
+	{
+		outputList.Insert(new TSelectableActionInfoWithColor(SAT_DEBUG_ACTION, EActions.SEPARATOR, "PowerGenerator Fuel", FadeColors.RED));
+		outputList.Insert(new TSelectableActionInfoWithColor(SAT_DEBUG_ACTION, EActions.GENERIC_FUEL_FULL, "Full", FadeColors.LIGHT_GREY));
+		outputList.Insert(new TSelectableActionInfoWithColor(SAT_DEBUG_ACTION, EActions.GENERIC_FUEL_EMPTY, "Empty", FadeColors.LIGHT_GREY));
+		outputList.Insert(new TSelectableActionInfoWithColor(SAT_DEBUG_ACTION, EActions.GENERIC_FUEL_INCREASE, "10% increase", FadeColors.LIGHT_GREY));
+		outputList.Insert(new TSelectableActionInfoWithColor(SAT_DEBUG_ACTION, EActions.GENERIC_FUEL_DECREASE, "10% decrease", FadeColors.LIGHT_GREY));
+		outputList.Insert(new TSelectableActionInfoWithColor(SAT_DEBUG_ACTION, EActions.SEPARATOR, "___________________________", FadeColors.RED));
+		
+		super.GetDebugActions(outputList);
+	}
+	
+	override bool OnAction(int action_id, Man player, ParamsReadContext ctx)
+	{
+		if (super.OnAction(action_id, player, ctx))
+			return true;
+
+		if (!GetGame().IsServer())
+			return false;
+
+		switch (action_id)
+		{
+			case EActions.GENERIC_FUEL_FULL:
+				SetFuel(GetMaxFuel());
+				return true;
+			case EActions.GENERIC_FUEL_EMPTY:
+				SetFuel(0);
+				return true;
+			case EActions.GENERIC_FUEL_INCREASE:
+				AddFuel(Math.Clamp(GetMaxFuel() * 0.1, 0.0, GetMaxFuel()));
+				return true;
+			case EActions.GENERIC_FUEL_DECREASE:
+				float value = GetMaxFuel() * -0.1;
+				if (value <= 0)
+					SetFuel(0.0);
+					return true;
+			
+				AddFuel(value);
+				return true;
+		}
+	
+		return false;
+	}
 }
 
 
-class PowerGenerator extends PowerGeneratorBase
-{
-
-
-}
+class PowerGenerator extends PowerGeneratorBase {}

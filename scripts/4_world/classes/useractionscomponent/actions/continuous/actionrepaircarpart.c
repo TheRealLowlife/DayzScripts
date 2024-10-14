@@ -1,12 +1,8 @@
-class RepairCarPartActionReciveData : ActionReciveData
-{
-	string m_DamageZoneRecived;
-}
+class RepairCarPartActionReciveData : RepairVehiclePartActionReciveData
+{}
 
-class RepairCarPartActionData : ActionData
-{
-	string m_DamageZone;
-}
+class RepairCarPartActionData : RepairVehiclePartActionData
+{}
 
 class ActionRepairCarPartCB : ActionContinuousBaseCB
 {

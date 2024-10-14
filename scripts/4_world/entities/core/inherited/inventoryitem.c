@@ -759,7 +759,15 @@ class EngineOil extends ItemBase
 	}
 };
 
-class TireRepairKit extends ItemBase {};
+class TireRepairKit extends ItemBase 
+{
+	override void SetActions()
+	{
+		super.SetActions();
+		
+		AddAction(ActionRepairBoatChassis);
+	}
+};
 
 class HeadlightH7 extends ItemBase
 {

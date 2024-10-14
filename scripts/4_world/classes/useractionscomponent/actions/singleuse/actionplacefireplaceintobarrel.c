@@ -38,7 +38,5 @@ class ActionPlaceFireplaceIntoBarrel: ActionSingleUseBase
 		BarrelHoles_ColorBase fireplace_barrel = BarrelHoles_ColorBase.Cast( action_data.m_Target.GetObject() );
 		auto lambda = new MoveEquipToExistingItemAndDestroyOldRootLambda(fireplace_in_hands, "", action_data.m_Player, fireplace_barrel);
 		action_data.m_Player.ServerReplaceItemInHandsWithNewElsewhere(lambda);
-
-		action_data.m_Player.GetSoftSkillsManager().AddSpecialty( m_SpecialtyWeight );
 	}
 }

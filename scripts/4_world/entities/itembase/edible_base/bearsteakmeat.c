@@ -20,6 +20,28 @@ class BearSteakMeat extends Edible_Base
 		return true;
 	}
 	
+	override void HandleFoodStageChangeAgents(FoodStageType stageOld, FoodStageType stageNew)
+	{
+		int keepAgentsRnd = 0;
+		if (Math.RandomFloat01() <= GameConstants.SALMONELLA_RETENTION_PREDATOR)
+		{
+			keepAgentsRnd |= eAgents.SALMONELLA;
+		}
+		
+		switch (stageNew)
+		{
+			case FoodStageType.BAKED:
+			case FoodStageType.BOILED:
+			case FoodStageType.DRIED:
+				RemoveAllAgentsExcept(keepAgentsRnd|eAgents.BRAIN|eAgents.HEAVYMETAL);
+			break;
+			
+			case FoodStageType.BURNED:
+				RemoveAllAgentsExcept(eAgents.SALMONELLA|eAgents.HEAVYMETAL);
+			break;
+		}
+	}
+	
 	override void SetActions()
 	{
 		super.SetActions();

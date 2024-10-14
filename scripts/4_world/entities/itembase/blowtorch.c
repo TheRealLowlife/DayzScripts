@@ -105,6 +105,7 @@ class Blowtorch extends ItemBase
 		AddAction(ActionRepairCarChassisWithBlowtorch);
 		AddAction(ActionRepairCarPartWithBlowtorch);
 		AddAction(ActionRepairItemWithBlowtorch);
+		AddAction(ActionRepairBoatEngine);
 	}
 	
 	protected EntityAI GetGasCanister()
